@@ -3,7 +3,8 @@ import cors from 'cors';
 import express from 'express';
 import mongoose from 'mongoose';
 import Pusher from 'pusher';
-import Message from './chatModel.js';
+import thaiCo from './thaiCo.js';
+import vietCo from './vietCo.js';
 
 // app config..
 const app = express();
@@ -40,28 +41,31 @@ mongoose
   });
 
 //pusher config
+const collections = ['thaicos', 'vietcos'];
 const db = mongoose.connection;
 db.once('open', () => {
   console.log('connection open baby');
 
-  const msgCo = db.collection('messages');
-  const changeStream = msgCo.watch();
+  collections.forEach((collection) => {
+    const msgCo = db.collection(collection);
+    const changeStream = msgCo.watch();
 
-  changeStream.on('change', (change) => {
-    console.log('stream changed:', change);
+    changeStream.on('change', (change) => {
+      console.log('stream changed:', change);
 
-    if (change.operationType === 'insert') {
-      const msgDetails = change.fullDocument;
+      if (change.operationType === 'insert') {
+        const msgDetails = change.fullDocument;
 
-      pusher.trigger('lang-pusher', 'inserted', {
-        name: msgDetails.name,
-        message: msgDetails.message,
-        timestamp: msgDetails.timestamp,
-        received: msgDetails.received,
-      });
-    } else {
-      console.log('something aint pushing');
-    }
+        pusher.trigger(collection, 'inserted', {
+          name: msgDetails.name,
+          message: msgDetails.message,
+          timestamp: msgDetails.timestamp,
+          received: msgDetails.received,
+        });
+      } else {
+        console.log('something aint pushing');
+      }
+    });
   });
 });
 
@@ -69,7 +73,8 @@ db.once('open', () => {
 app.get('/', (req, res) => res.status(200).send('Heyy'));
 
 app.get('/messages/sync', (req, res) => {
-  Message.find({})
+  thaiCo
+    .find({})
     .then((data) => {
       res.status(200).send(data);
     })
@@ -78,16 +83,83 @@ app.get('/messages/sync', (req, res) => {
     });
 });
 
-app.post('/messages/new', (req, res) => {
-  const dbmessage = req.body;
-  Message.create(dbmessage)
+app.get('/vietmessages/sync', (req, res) => {
+  vietCo
+    .find({})
     .then((data) => {
-      res.status(201).send(data);
+      res.status(200).send(data);
     })
     .catch((err) => {
       res.status(500).send(err);
     });
 });
 
+app.get('/collections', async (req, res) => {
+  try {
+    // Get all collection names using Mongoose
+    const collections = await mongoose.connection.db
+      .listCollections()
+      .toArray();
+
+    // Extract the collection names from the result
+    // const collectionNames = collections.map((collection) => collection.name);
+
+    // Return the collection names as response
+    res.status(200).send(collections);
+  } catch (err) {
+    // Handle any errors
+    console.error('Failed to get collection names:', err);
+    res.status(500).send('Failed to get collection names');
+  }
+});
+
+const createMessage = (collectionObj) => (req, res) => {
+  const dbmessage = req.body;
+  // const collection = mongoose.connection.collection(collectionName); // Use the collection name as parameter
+  collectionObj
+    .create(dbmessage)
+    .then((data) => {
+      res.status(201).send(data);
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
+};
+
+app.post('/thairoom/new', createMessage(thaiCo));
+app.post('/vietroom/new', createMessage(vietCo));
+
 //listen
 app.listen(port, () => console.log(`listening to port: ${port}`));
+
+// const msgCo = db.collection('thaicos');
+// const changeStream = msgCo.watch();
+
+// changeStream.on('change', (change) => {
+//   console.log('stream changed:', change);
+
+//   if (change.operationType === 'insert') {
+//     const msgDetails = change.fullDocument;
+
+//     pusher.trigger('lang-pusher', 'inserted', {
+//       name: msgDetails.name,
+//       message: msgDetails.message,
+//       timestamp: msgDetails.timestamp,
+//       received: msgDetails.received,
+//     });
+//   } else {
+//     console.log('something aint pushing');
+//   }
+// });
+
+// app.post('/messages/new', (req, res) => {
+//   const dbmessage = req.body;
+//   thaiCo
+//     .create(dbmessage)
+//     .then((data) => {
+//       res.status(201).send(data);
+//     })
+//     .catch((err) => {
+//       res.status(500).send(err);
+//     });
+// });
