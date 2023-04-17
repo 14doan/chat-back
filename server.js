@@ -72,8 +72,8 @@ db.once('open', () => {
 // api routes
 app.get('/', (req, res) => res.status(200).send('Heyy'));
 
-app.get('/messages/sync', (req, res) => {
-  thaiCo
+const getMessages = (obj) => (req, res) => {
+  obj
     .find({})
     .then((data) => {
       res.status(200).send(data);
@@ -81,18 +81,9 @@ app.get('/messages/sync', (req, res) => {
     .catch((err) => {
       res.status(500).send(err);
     });
-});
-
-app.get('/vietmessages/sync', (req, res) => {
-  vietCo
-    .find({})
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(500).send(err);
-    });
-});
+};
+app.get('/thaimessages/sync', getMessages(thaiCo));
+app.get('/vietmessages/sync', getMessages(vietCo));
 
 app.get('/collections', async (req, res) => {
   try {
@@ -125,7 +116,6 @@ const createMessage = (collectionObj) => (req, res) => {
       res.status(500).send(err);
     });
 };
-
 app.post('/thairoom/new', createMessage(thaiCo));
 app.post('/vietroom/new', createMessage(vietCo));
 
@@ -158,6 +148,27 @@ app.listen(port, () => console.log(`listening to port: ${port}`));
 //     .create(dbmessage)
 //     .then((data) => {
 //       res.status(201).send(data);
+//     })
+//     .catch((err) => {
+//       res.status(500).send(err);
+//     });
+// });
+// app.get('/thaimessages/sync', (req, res) => {
+//   thaiCo
+//     .find({})
+//     .then((data) => {
+//       res.status(200).send(data);
+//     })
+//     .catch((err) => {
+//       res.status(500).send(err);
+//     });
+// });
+
+// app.get('/vietmessages/sync', (req, res) => {
+//   vietCo
+//     .find({})
+//     .then((data) => {
+//       res.status(200).send(data);
 //     })
 //     .catch((err) => {
 //       res.status(500).send(err);
