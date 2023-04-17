@@ -9,4 +9,4 @@ const chatSchema = mongoose.Schema({
 });
 
 export default chatSchema;
-// export default mongoose.model('Message', chatSchema);
+// export default mongoose.model('Messagee', chatSchema);
