@@ -119,6 +119,20 @@ const createMessage = (collectionObj) => (req, res) => {
 app.post('/thairoom/new', createMessage(thaiCo));
 app.post('/vietroom/new', createMessage(vietCo));
 
+const deleteAllMessages = (obj) => (req, res) => {
+  obj
+    .deleteMany({})
+    .then(() => {
+      res.status(200).send('All messages deleted successfully');
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
+};
+// Define your delete API routes
+app.delete('/thaimessages/reset', deleteAllMessages(thaiCo));
+app.delete('/vietmessages/reset', deleteAllMessages(vietCo));
+
 //listen
 app.listen(port, () => console.log(`listening to port: ${port}`));
 
